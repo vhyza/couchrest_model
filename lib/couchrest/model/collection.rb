@@ -219,7 +219,7 @@ module CouchRest
           if @container_class.nil?
             results
           else
-            results['rows'].collect { |row| @container_class.create_from_database(row['doc']) } unless results['rows'].nil?
+            results['rows'].collect { |row| @container_class.create_from_database(row['doc']) if row['doc'] }.compact unless results['rows'].nil?
           end
         end
 
