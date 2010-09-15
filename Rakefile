@@ -10,7 +10,7 @@ begin
 rescue LoadError
   puts <<-EOS
 To use rspec for testing you must install rspec gem:
-    gem install rspec
+    gem install rspec --pre
 EOS
   exit(0)
 end
