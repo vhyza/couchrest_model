@@ -444,7 +444,7 @@ describe "Model Base" do
     it "should be able to paginate through a large set of search results" do
       if couchdb_lucene_available?
         names = []
-        Cat.paginated_each(:design_doc => "search", :view_name => "cats",
+        Cat.paginated_each(:design_doc => "_design/search", :view_name => "cats",
              :q => 'name:S*', :search => true, :include_docs => true, :per_page => 3) do |cat|
            cat.should_not be_nil
            names << cat.name
