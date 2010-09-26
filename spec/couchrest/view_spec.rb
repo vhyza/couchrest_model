@@ -3,6 +3,7 @@ require File.join(FIXTURE_PATH, 'more', 'cat')
 require File.join(FIXTURE_PATH, 'more', 'person')
 require File.join(FIXTURE_PATH, 'more', 'article')
 require File.join(FIXTURE_PATH, 'more', 'course')
+require File.join(FIXTURE_PATH, 'more', 'mention')
 
 describe "Model views" do
 
@@ -133,6 +134,65 @@ describe "Model views" do
       end
       courses[0]["doc"]["title"].should =='aaa'
     end
+  end
+
+  describe "model with stale=ok defined in view" do
+    before(:all) do
+      reset_test_db!
+      %w{aaa bbb ddd eee ffff}.each do |title|
+        Mention.new(:title => title, :published_at => Time.now).save
+      end
+    end
+
+    it "should make the design doc with couchrest-defaults upon first query" do
+      Mention.by_title
+      doc = Mention.design_doc
+      doc['views']['by_title']['map'].should include('Mention')
+      doc['views']['by_title']['couchrest-defaults'].should include(:stale => "ok")
+    end
+
+    it "should get 0 items by view" do
+      mentions = Mention.by_title
+      mentions.length.should == 0
+    end
+
+    it "should get all items by view after view update" do
+      Mention.update_view
+      mentions = Mention.by_title
+      mentions.length.should == 5
+    end
+
+    it "should get 4 items after one mention was deleted" do
+      Mention.first.destroy
+      mentions = Mention.by_title
+      mentions.length.should == 4
+    end
+
+    it "should get only 4 after new mention was created" do
+      Mention.create(:title => "another title")
+      mentions = Mention.by_title
+      mentions.length.should == 4
+    end
+
+    it "should get 5 mentions after view update" do
+      Mention.update_view
+      mentions = Mention.by_title
+      mentions.length.should == 5
+    end
+
+    it "should get old properties until view is updated" do
+      another_title_mention = Mention.by_title(:key => "another title")
+      another_title_mention.size.should == 1
+      another_title_mention.first.update_attributes(:title => "some title")
+      Mention.by_title(:key => "another title").size.should == 1
+    end
+
+    it "should be ok after view update" do
+      Mention.update_view
+      Mention.by_title(:key => "another title").size.should == 0
+      Mention.by_title(:key => "some title").size.should == 1
+    end
+
   end
 
   describe "find a single item using a view" do
